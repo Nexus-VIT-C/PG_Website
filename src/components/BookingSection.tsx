@@ -1,179 +1,179 @@
+import React, { useState } from 'react';
+import { CalendarIcon } from 'lucide-react';
 
-import React, { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+interface BookingSectionProps {
+  preselectedPg?: string;
+}
 
-const BookingSection = () => {
-  const { toast } = useToast();
-  
+const BookingSection: React.FC<BookingSectionProps> = ({ preselectedPg }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    property: "",
-    date: "",
-    time: "",
-    notes: "",
+    name: '',
+    email: '',
+    phone: '',
+    pgProperty: preselectedPg || '',
+    visitDate: '',
+    notes: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const [loading, setLoading] = useState(false);
+
+  const pgOptions = ['xyz', 'Comfort PG - Central', 'Elite PG - Tech Park'];
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Simple validation
-    if (!formData.name || !formData.phone || !formData.property || !formData.date || !formData.time) {
-      toast({
-        title: "Error",
-        description: "Please fill all required fields",
-        variant: "destructive",
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
-      return;
+
+      const result = await response.json();
+      if (response.ok) {
+        alert("Your booking request has been sent. We'll contact you shortly!");
+        if (!preselectedPg) {
+          setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            pgProperty: '',
+            visitDate: '',
+            notes: '',
+          });
+        }
+      } else {
+        alert(result.message || 'Failed to send booking request. Please try again later.');
+      }
+    } catch (error) {
+      console.error('Error sending booking request:', error);
+      alert('An error occurred. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-
-    // Submit form (in a real app, this would send data to a server)
-    console.log("Form submitted:", formData);
-
-    toast({
-      title: "Booking Request Received!",
-      description: "We'll contact you shortly to confirm your visit.",
-    });
-
-    // Reset form
-    setFormData({
-      name: "",
-      phone: "",
-      property: "",
-      date: "",
-      time: "",
-      notes: "",
-    });
   };
 
   return (
-    <section id="book" className="py-16 bg-gray-50">
-      <div className="section-container">
-        <h2 className="section-title">Book a Visit</h2>
-        
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Schedule Your Visit</CardTitle>
-              <CardDescription>
-                Fill out the form below and we'll arrange a convenient time for you to visit and explore our PG facilities.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name*</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      placeholder="Enter your full name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number*</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      placeholder="Enter your phone number"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
+    <section className="bg-blue-50 py-16 w-full" id="book-visit">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Book a Visit</h2>
+          <div className="w-20 h-1 bg-blue-500 mx-auto mb-6"></div>
+          <p className="text-lg text-gray-600">Schedule a visit to see our PG accommodations in person</p>
+        </div>
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label htmlFor="name" className="block text-gray-700 font-medium mb-2">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  required
+                  disabled={loading}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="property">Select PG Property*</Label>
-                  <Select
-                    value={formData.property}
-                    onValueChange={(value) => handleSelectChange("property", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a PG location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="anna-nagar">Anna Nagar PG</SelectItem>
-                      <SelectItem value="adyar">Adyar PG</SelectItem>
-                      <SelectItem value="velachery">Velachery PG</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label htmlFor="email" className="block text-gray-700 font-medium mb-2">Email Address</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  required
+                  disabled={loading}
+                />
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Preferred Date*</Label>
-                    <Input
-                      id="date"
-                      name="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="time">Preferred Time*</Label>
-                    <Select
-                      value={formData.time}
-                      onValueChange={(value) => handleSelectChange("time", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a time slot" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10am-12pm">10:00 AM - 12:00 PM</SelectItem>
-                        <SelectItem value="12pm-2pm">12:00 PM - 2:00 PM</SelectItem>
-                        <SelectItem value="2pm-4pm">2:00 PM - 4:00 PM</SelectItem>
-                        <SelectItem value="4pm-6pm">4:00 PM - 6:00 PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <div>
+                <label htmlFor="phone" className="block text-gray-700 font-medium mb-2">Phone Number</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Special Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    placeholder="Any special requirements or questions?"
-                    value={formData.notes}
-                    onChange={handleChange}
-                  />
-                </div>
+            <div className="mb-6">
+              <label htmlFor="pgProperty" className="block text-gray-700 font-medium mb-2">Choose PG Property</label>
+              <select
+                id="pgProperty"
+                name="pgProperty"
+                value={formData.pgProperty}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                required
+                disabled={loading}
+              >
+                <option value="">Select a PG</option>
+                {pgOptions.map((pg, index) => (
+                  <option key={index} value={pg}>{pg}</option>
+                ))}
+              </select>
+            </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-pgBlue-dark">
-                  Submit Booking Request
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+            <div className="mb-6">
+              <label htmlFor="visitDate" className="block text-gray-700 font-medium mb-2">Preferred Visit Date & Time</label>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  id="visitDate"
+                  name="visitDate"
+                  value={formData.visitDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  required
+                  disabled={loading}
+                />
+                <CalendarIcon size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <label htmlFor="notes" className="block text-gray-700 font-medium mb-2">Special Notes (Optional)</label>
+              <textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                disabled={loading}
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Booking...' : 'Book My Visit'}
+            </button>
+          </form>
         </div>
       </div>
     </section>
